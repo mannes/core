@@ -16,6 +16,7 @@ namespace ApiPlatform\Core\Hydra\Serializer;
 use ApiPlatform\Core\DataProvider\PaginatorInterface;
 use ApiPlatform\Core\JsonLd\Serializer\JsonLdContextTrait;
 use ApiPlatform\Core\Util\IriHelper;
+use Pagerfanta\Pagerfanta;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
@@ -59,6 +60,14 @@ final class PartialCollectionViewNormalizer implements NormalizerInterface, Norm
                 // Consider the collection not paginated if there is only one page
                 $paginated = false;
             }
+        } elseif ($paginated = $object instanceof Pagerfanta) {
+            $currentPage = $object->getCurrentPage();
+            $lastPage = $object->getNbPages();
+
+            if (1 === $currentPage && 1 === $lastPage) {
+                // Consider the collection not paginated if there is only one page
+                $paginated = false;
+            }
         }
 
         $parsed = IriHelper::parseIri($context['request_uri'] ?? '/', $this->pageParameterName);
@@ -78,7 +87,7 @@ final class PartialCollectionViewNormalizer implements NormalizerInterface, Norm
             $data['hydra:view']['hydra:first'] = IriHelper::createIri($parsed['parts'], $parsed['parameters'], $this->pageParameterName, 1.);
             $data['hydra:view']['hydra:last'] = IriHelper::createIri($parsed['parts'], $parsed['parameters'], $this->pageParameterName, $lastPage);
 
-            if (1. !== $currentPage) {
+            if (1. != $currentPage) {
                 $data['hydra:view']['hydra:previous'] = IriHelper::createIri($parsed['parts'], $parsed['parameters'], $this->pageParameterName, $currentPage - 1.);
             }
 
